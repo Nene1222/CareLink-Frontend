@@ -6,6 +6,7 @@ import {
   Settings,
   LogOut,
   UserCheck2,
+  ShoppingCart
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -24,6 +25,7 @@ const MenuSideBar: React.FC = () => {
     { path: '/appointment', label: 'Appointment', icon: CalendarIcon },
     { path: '/medical-record', label: 'Medical Record', icon: ClipboardList },
     { path: '/inventory', label: 'Inventory Management', icon: Settings },
+    { path: '/POS', label: 'POS', icon: ShoppingCart },
   ];
 
   return (
