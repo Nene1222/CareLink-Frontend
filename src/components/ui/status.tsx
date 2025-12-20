@@ -2,7 +2,7 @@ import React from 'react';
 import "../../assets/style/medical/statusBage.css";
 
 interface StatusBadgeProps {
-  status: 'Completed' | 'Draft';
+  status: 'Completed' | 'Daft';
 }
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {

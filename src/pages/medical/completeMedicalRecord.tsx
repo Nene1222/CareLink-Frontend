@@ -1,68 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import '../../assets/style/medical/CompleteMedicalRecord.css';
 import type { MedicalRecordData } from './page';
-// TODO: Uncomment when backend API is integrated
-// import { medicalRecordService, type MedicalRecord } from '../../services/api/medicalRecordService';
-
-// Temporary type definition for frontend testing
-type MedicalRecord = {
-  _id?: string;
-  id?: string;
-  recordId: string;
-  status: 'Completed' | 'Draft';
-  patient: {
-    name: string;
-    id: string;
-    gender: 'Female' | 'Male' | 'Other';
-    dateOfBirth: string;
-    age: number;
-    address?: string;
-    contactNumber?: string;
-  };
-  visit: {
-    dateOfVisit: string;
-    doctor: string;
-    reasonOfVisit?: string;
-  };
-  medicalHistory?: {
-    allergiesStatus: 'no-known' | 'has-allergies';
-    allergiesDetails?: string;
-    currentMedications?: string;
-    chronicDiseases?: string[];
-    chronicDiseasesDetails?: string;
-    pastSurgeries?: string;
-    familyHistories?: string;
-  };
-  vitalSigns?: {
-    height: number;
-    heightUnit: 'cm' | 'in';
-    weight: number;
-    weightUnit: 'kg' | 'lb';
-    bloodPressure?: string;
-    pulseRate?: number;
-    temperature?: number;
-    respiratoryRate?: number;
-    oxygenSaturation?: number;
-  };
-  physicalExamination?: {
-    generalAppearance?: string;
-    cardiovascular?: string;
-    respiratory?: string;
-    abdominal?: string;
-    neurological?: string;
-    additionalFindings?: string;
-  };
-  diagnosis?: {
-    diagnosis?: string;
-    testsOrdered?: string;
-  };
-  treatmentPlan?: {
-    medicationsPrescribed?: string;
-    proceduresPerformed?: string;
-    instruction?: string;
-  };
-};
+import { medicalRecordService, type MedicalRecord } from '../../services/api/medicalRecordService';
 
 // Import all your form components
 import PatientForm from '../../components/medical/form/patientForm';
@@ -84,61 +23,28 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
   onAddRecord,
   onUpdateRecord
 }) => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  // Prefer explicit prop; fall back to router location state when navigating from list
-  const localEditingRecord = (editingRecord as any) || (location.state as any)?.editingRecord || null;
   const formRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fullRecord, setFullRecord] = useState<MedicalRecord | null>(null);
 
-  const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else {
-      navigate(-1);
-    }
-  };
-
   // Fetch full record data when editingRecord is provided
   useEffect(() => {
     const fetchFullRecord = async () => {
-      if (localEditingRecord) {
+      if (editingRecord) {
         try {
           // If editingRecord is already a full MedicalRecord, use it
-          if ('patient' in localEditingRecord && 'visit' in localEditingRecord) {
-            setFullRecord(localEditingRecord as MedicalRecord);
+          if ('patient' in editingRecord && 'visit' in editingRecord) {
+            setFullRecord(editingRecord as MedicalRecord);
           } else {
-            // TODO: Uncomment when backend API is integrated
-            // const recordId = (editingRecord as MedicalRecordData).recordId;
-            // if (recordId) {
-            //   const record = await medicalRecordService.getByRecordId(recordId);
-            //   setFullRecord(record);
-            // } else if ((editingRecord as any)._id) {
-            //   const record = await medicalRecordService.getById((editingRecord as any)._id);
-            //   setFullRecord(record);
-            // }
-            
-            // Mock data for frontend testing - convert MedicalRecordData to MedicalRecord
-            const recordData = localEditingRecord as MedicalRecordData;
-            setFullRecord({
-              recordId: recordData.recordId,
-              status: recordData.status === 'Daft' ? 'Draft' : 'Completed',
-              patient: {
-                name: recordData.patientName,
-                id: recordData.patientId,
-                gender: recordData.gender as 'Female' | 'Male' | 'Other',
-                dateOfBirth: '',
-                age: recordData.age,
-              },
-              visit: {
-                dateOfVisit: recordData.dateOfVisit,
-                doctor: recordData.doctor,
-              },
-              diagnosis: {
-                diagnosis: recordData.diagnosis,
-              },
-            });
+            // Otherwise, fetch it using recordId or _id
+            const recordId = (editingRecord as MedicalRecordData).recordId;
+            if (recordId) {
+              const record = await medicalRecordService.getByRecordId(recordId);
+              setFullRecord(record);
+            } else if ((editingRecord as any)._id) {
+              const record = await medicalRecordService.getById((editingRecord as any)._id);
+              setFullRecord(record);
+            }
           }
         } catch (err) {
           console.error('Failed to fetch full record:', err);
@@ -148,7 +54,7 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
       }
     };
     fetchFullRecord();
-  }, [localEditingRecord]);
+  }, [editingRecord]);
 
   // Populate diagnosis fields when fullRecord is loaded
   useEffect(() => {
@@ -352,7 +258,7 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
     setIsSubmitting(true);
 
     try {
-  const recordId = fullRecord?.recordId || (localEditingRecord as any)?.recordId || `MR-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+      const recordId = fullRecord?.recordId || (editingRecord as any)?.recordId || `MR-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
       
       const recordToSave: Partial<MedicalRecord> = {
         ...formData,
@@ -363,32 +269,26 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
       // Log the data being sent for debugging
       console.log('Sending medical record data:', JSON.stringify(recordToSave, null, 2));
 
-      // TODO: Uncomment when backend API is integrated
-  // if (fullRecord || localEditingRecord) {
-  //   const recordIdToUpdate = fullRecord?._id || fullRecord?.id || (localEditingRecord as any)?._id || (localEditingRecord as any)?.id || '';
-      //   if (recordIdToUpdate) {
-      //     await medicalRecordService.update(recordIdToUpdate, recordToSave);
-      //     alert('Medical record updated successfully!');
-      //   } else {
-      //     throw new Error('Cannot update: Record ID not found');
-      //   }
-      // } else {
-      //   await medicalRecordService.create(recordToSave);
-      //   alert('Medical record submitted successfully!');
-      // }
-      
-      // Mock save for frontend testing
-  if (fullRecord || localEditingRecord) {
-        alert('Medical record updated successfully! (Mock - will save to backend when integrated)');
+      if (fullRecord || editingRecord) {
+        // Update existing record
+        const recordIdToUpdate = fullRecord?._id || fullRecord?.id || (editingRecord as any)?._id || (editingRecord as any)?.id || '';
+        if (recordIdToUpdate) {
+          await medicalRecordService.update(recordIdToUpdate, recordToSave);
+        alert('Medical record updated successfully!');
       } else {
-        alert('Medical record submitted successfully! (Mock - will save to backend when integrated)');
+          throw new Error('Cannot update: Record ID not found');
+      }
+    } else {
+        // Create new record
+        await medicalRecordService.create(recordToSave);
+        alert('Medical record submitted successfully!');
       }
 
       // Call parent callbacks if provided
-  if (onAddRecord && !fullRecord && !localEditingRecord) {
+      if (onAddRecord && !fullRecord && !editingRecord) {
         onAddRecord({} as MedicalRecordData); // Trigger reload
       }
-  if (onUpdateRecord && (fullRecord || localEditingRecord)) {
+      if (onUpdateRecord && (fullRecord || editingRecord)) {
         onUpdateRecord({} as MedicalRecordData); // Trigger reload
       }
 
@@ -419,32 +319,27 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
     setIsSubmitting(true);
 
     try {
-      // const recordId = fullRecord?.recordId || (editingRecord as any)?.recordId || `MR-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+      const recordId = fullRecord?.recordId || (editingRecord as any)?.recordId || `MR-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
       
-      // TODO: Uncomment when backend API is integrated
-      // const recordToSave: Partial<MedicalRecord> = {
-      //   ...formData,
-      //   recordId,
-      //   status: 'Draft'
-      // };
-      // if (fullRecord || editingRecord) {
-      //   const recordIdToUpdate = fullRecord?._id || fullRecord?.id || (editingRecord as any)?._id || (editingRecord as any)?.id || '';
-      //   if (recordIdToUpdate) {
-      //     await medicalRecordService.update(recordIdToUpdate, recordToSave);
-      //     alert('Medical record saved as draft!');
-      //   } else {
-      //     throw new Error('Cannot update: Record ID not found');
-      //   }
-      // } else {
-      //   await medicalRecordService.create(recordToSave);
-      //   alert('Medical record saved as draft!');
-      // }
-      
-      // Mock save for frontend testing
+      const recordToSave: Partial<MedicalRecord> = {
+        ...formData,
+      recordId,
+      status: 'Daft'
+    };
+
       if (fullRecord || editingRecord) {
-        alert('Medical record saved as draft! (Mock - will save to backend when integrated)');
+        // Update existing record
+        const recordIdToUpdate = fullRecord?._id || fullRecord?.id || (editingRecord as any)?._id || (editingRecord as any)?.id || '';
+        if (recordIdToUpdate) {
+          await medicalRecordService.update(recordIdToUpdate, recordToSave);
+        alert('Medical record saved as draft!');
       } else {
-        alert('Medical record saved as draft! (Mock - will save to backend when integrated)');
+          throw new Error('Cannot update: Record ID not found');
+      }
+    } else {
+        // Create new record
+        await medicalRecordService.create(recordToSave);
+        alert('Medical record saved as draft!');
       }
 
       // Call parent callbacks if provided
@@ -472,11 +367,13 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
       {/* Header Section - Same as default medical records page */}
       <div className="header">
         <div className="header-left">
-          <button className="back-button" onClick={handleBack} style={{ marginRight: '20px' }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
+          {onBack && (
+            <button className="back-button" onClick={onBack} style={{ marginRight: '20px' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+          )}
           <div>
             <h1 className="title">Medical Record</h1>
             <p className="subtitle">Manage Organization</p>

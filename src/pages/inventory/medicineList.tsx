@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import '../../assets/style/inventory/medicineList.css';
+// import MedicineStatus from '../../components/ui/medicineStatus';
 import BarCodeScanner from '../../components/inventory/BarCodeScanner';
 import AddNewMedicineModal from '../../components/inventory/AddNewMedicineModal';
 import EditMedicineModal from '../../components/inventory/EditMedicineModal';
 import MedicineDetail from './medicineDetail';
 import InventoryBar from '../../components/layout/inventoryBar';
-// TODO: Uncomment when backend API is integrated
 // import { inventoryService } from '../../services/api/inventoryService';
-import { medicinesByGroup } from './data/inventoryData';
+import { inventoryService } from '../../services/api/inventoryService';
+
 
 interface MedicineListProps {
   groupName: string;
@@ -19,8 +20,8 @@ interface MedicineListProps {
 }
 
 interface Medicine {
-  _id?: string;
-  id: string;
+  _id: string;
+  id?: string;
   name: string;
   description?: string;
   barcode?: number;
@@ -62,26 +63,8 @@ const MedicineList: React.FC<MedicineListProps> = ({ groupName, groupId, onBack,
     try {
       setIsLoading(true);
       setError(null);
-      // TODO: Uncomment when backend API is integrated
-      // const data = await inventoryService.getMedicinesByGroupId(groupId, searchTerm || undefined);
-      
-      // Mock data for frontend testing
-      const groupMedicines = medicinesByGroup[groupName] || [];
-      let filtered = groupMedicines.map(med => ({
-        _id: med.id,
-        id: med.id,
-        name: med.name,
-        description: `Description for ${med.name}`,
-        barcode_value: `BC-${med.id}`
-      }));
-      
-      if (searchTerm) {
-        filtered = filtered.filter(med => 
-          med.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-      
-      setMedicines(filtered);
+      const data = await inventoryService.getMedicinesByGroupId(groupId, searchTerm || undefined);
+      setMedicines(data);
     } catch (err: any) {
       console.error('Failed to load medicines:', err);
       setError(err.message || 'Failed to load medicines');
@@ -108,7 +91,7 @@ const MedicineList: React.FC<MedicineListProps> = ({ groupName, groupId, onBack,
     setIsAddMedicineModalOpen(true);
   };
 
-  const handleSaveMedicine = async (_medicine: Medicine) => {
+  const handleSaveMedicine = async (medicine: Medicine) => {
     try {
       await loadMedicines(); // Reload medicines to get updated counts
       setIsAddMedicineModalOpen(false);
@@ -131,6 +114,10 @@ const MedicineList: React.FC<MedicineListProps> = ({ groupName, groupId, onBack,
     setIsEditMedicineModalOpen(true);
   };
 
+  // Helper to get medicine ID
+  const getMedicineId = (medicine: Medicine): string => {
+    return medicine._id || medicine.id || '';
+  };
 
   const handleSaveEditMedicine = async (medicineData: {
     id: string;
@@ -141,22 +128,13 @@ const MedicineList: React.FC<MedicineListProps> = ({ groupName, groupId, onBack,
     photo?: File;
   }) => {
     try {
-      // TODO: Uncomment when backend API is integrated
-      // await inventoryService.updateMedicine(medicineData.id, {
-      //   name: medicineData.name,
-      //   description: medicineData.description,
-      //   barcode_image: medicineData.barcode_image,
-      //   photo: medicineData.photo,
-      // });
-      
-      // Mock update for frontend testing
-      setMedicines(prevMedicines =>
-        prevMedicines.map(med =>
-          (med._id || med.id) === medicineData.id
-            ? { ...med, name: medicineData.name, description: medicineData.description }
-            : med
-        )
-      );
+      await inventoryService.updateMedicine(medicineData.id, {
+        name: medicineData.name,
+        description: medicineData.description,
+        barcode_image: medicineData.barcode_image,
+        photo: medicineData.photo,
+      });
+      await loadMedicines(); // Reload medicines
       setIsEditMedicineModalOpen(false);
       setEditingMedicineId(null);
     } catch (err: any) {
@@ -173,13 +151,8 @@ const MedicineList: React.FC<MedicineListProps> = ({ groupName, groupId, onBack,
   const handleDeleteMedicine = async (medicineId: string) => {
     if (window.confirm('Are you sure you want to delete this medicine? This action cannot be undone.')) {
       try {
-        // TODO: Uncomment when backend API is integrated
-        // await inventoryService.deleteMedicine(medicineId);
-        
-        // Mock delete for frontend testing
-        setMedicines(prevMedicines => 
-          prevMedicines.filter(med => (med._id || med.id) !== medicineId)
-        );
+        await inventoryService.deleteMedicine(medicineId);
+        await loadMedicines(); // Reload medicines
       } catch (err: any) {
         console.error('Error deleting medicine:', err);
         alert(err.message || 'Failed to delete medicine');

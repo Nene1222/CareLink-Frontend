@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import '../../assets/style/medical/actionMenu.css';
 
 interface ActionMenuProps {
@@ -21,7 +21,6 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
   onDeleteRecord,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [adjustedPos, setAdjustedPos] = useState(position);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -40,36 +39,6 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
     };
   }, [isOpen, onClose]);
 
-  // Adjust menu position to keep it inside the viewport and flip above the button
-  useEffect(() => {
-    if (!isOpen || !menuRef.current) return;
-
-    const menuEl = menuRef.current;
-    const { innerWidth, innerHeight } = window;
-    const menuRect = menuEl.getBoundingClientRect();
-    const padding = 8;
-
-    let top = position.top;
-    let left = position.left;
-
-    // If menu would overflow bottom viewport, try flipping above the trigger
-    if (top + menuRect.height + padding > innerHeight) {
-      // Place above the trigger if possible
-      top = Math.max(padding, position.top - menuRect.height - 16);
-    }
-
-    // Prevent overflow on the right
-    if (left + menuRect.width + padding > innerWidth) {
-      left = Math.max(padding, innerWidth - menuRect.width - padding);
-    }
-
-    // Prevent overflow on the left/top edges
-    if (left < padding) left = padding;
-    if (top < padding) top = padding;
-
-    setAdjustedPos({ top, left });
-  }, [isOpen, position]);
-
   if (!isOpen) return null;
 
   return (
@@ -77,8 +46,8 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
       ref={menuRef}
       className="action-menu"
       style={{
-        top: `${adjustedPos.top}px`,
-        left: `${adjustedPos.left}px`,
+        top: `${position.top}px`,
+        left: `${position.left}px`,
       }}
     >
       <div className="action-menu-header">

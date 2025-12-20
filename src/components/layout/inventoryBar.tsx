@@ -32,18 +32,18 @@ const InventoryBar: React.FC<InventoryBarProps> = ({
         </div>
       </div>
       {showSearchBar && (
-      <div className="inventory-bar-right">
-        <div className="search-box">
-          <span className="search-icon">🔍</span>
-          <input
-            type="text"
-            placeholder="Search"
-            value={searchValue}
-            onChange={(e) => onSearchChange?.(e.target.value)}
-            className="search-input"
-          />
+        <div className="inventory-bar-right">
+          <div className="search-box">
+            <span className="search-icon">🔍</span>
+            <input
+              type="text"
+              placeholder="Search"
+              value={searchValue}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              className="search-input"
+            />
+          </div>
         </div>
-      </div>
       )}
     </div>
   );

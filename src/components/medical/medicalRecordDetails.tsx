@@ -1,67 +1,6 @@
 import React from 'react';
 import '../../assets/style/medical/medicalRecordDetails.css';
-// TODO: Uncomment when backend API is integrated
-// import type { MedicalRecord } from '../../services/api/medicalRecordService';
-
-// Temporary type definition for frontend testing
-type MedicalRecord = {
-  _id?: string;
-  id?: string;
-  recordId: string;
-  status: 'Completed' | 'Draft';
-  patient: {
-    name: string;
-    id: string;
-    age: number;
-    gender: string;
-    dateOfBirth: string;
-    address?: string;
-    contactNumber?: string;
-  };
-  visit: {
-    dateOfVisit: string;
-    doctor: string;
-    reasonOfVisit?: string;
-  };
-  vitalSigns?: {
-    height: number;
-    heightUnit: string;
-    weight: number;
-    weightUnit: string;
-    bmi?: number;
-    bloodPressure?: string;
-    pulseRate?: number;
-    temperature?: number;
-    respiratoryRate?: number;
-    oxygenSaturation?: number;
-  };
-  medicalHistory?: {
-    allergiesStatus: 'no-known' | 'has-allergies';
-    allergiesDetails?: string;
-    currentMedications?: string;
-    chronicDiseases?: string[];
-    chronicDiseasesDetails?: string;
-    pastSurgeries?: string;
-    familyHistories?: string;
-  };
-  physicalExamination?: {
-    generalAppearance?: string;
-    cardiovascular?: string;
-    respiratory?: string;
-    abdominal?: string;
-    neurological?: string;
-    additionalFindings?: string;
-  };
-  diagnosis?: {
-    diagnosis?: string;
-    testsOrdered?: string;
-  };
-  treatmentPlan?: {
-    medicationsPrescribed?: string;
-    proceduresPerformed?: string;
-    instruction?: string;
-  };
-};
+import type { MedicalRecord } from '../../services/api/medicalRecordService';
 
 interface MedicalRecordDetailsProps {
   isOpen: boolean;
@@ -186,62 +125,60 @@ const MedicalRecordDetails: React.FC<MedicalRecordDetailsProps> = ({
           </section>
 
           {/* Vital Signs */}
-          {record.vitalSigns && (
-            <section className="details-section">
-              <div className="section-header">
-                <svg className="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                </svg>
-                <h3 className="section-title">Vital Signs</h3>
+          <section className="details-section">
+            <div className="section-header">
+              <svg className="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+              <h3 className="section-title">Vital Signs</h3>
+            </div>
+            <div className="info-grid">
+              <div className="info-item">
+                <span className="info-label">Height</span>
+                <span className="info-value">{record.vitalSigns.height} {record.vitalSigns.heightUnit}</span>
               </div>
-              <div className="info-grid">
-                <div className="info-item">
-                  <span className="info-label">Height</span>
-                  <span className="info-value">{record.vitalSigns.height} {record.vitalSigns.heightUnit}</span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Weight</span>
-                  <span className="info-value">{record.vitalSigns.weight} {record.vitalSigns.weightUnit}</span>
-                </div>
-                {record.vitalSigns.bmi && (
-                  <div className="info-item">
-                    <span className="info-label">BMI</span>
-                    <span className="info-value">{record.vitalSigns.bmi.toFixed(2)}</span>
-                  </div>
-                )}
-                {record.vitalSigns.bloodPressure && (
-                  <div className="info-item">
-                    <span className="info-label">Blood Pressure</span>
-                    <span className="info-value">{record.vitalSigns.bloodPressure}</span>
-                  </div>
-                )}
-                {record.vitalSigns.pulseRate && (
-                  <div className="info-item">
-                    <span className="info-label">Pulse Rate</span>
-                    <span className="info-value">{record.vitalSigns.pulseRate} bpm</span>
-                  </div>
-                )}
-                {record.vitalSigns.temperature && (
-                  <div className="info-item">
-                    <span className="info-label">Temperature</span>
-                    <span className="info-value">{record.vitalSigns.temperature}°C</span>
-                  </div>
-                )}
-                {record.vitalSigns.respiratoryRate && (
-                  <div className="info-item">
-                    <span className="info-label">Respiratory Rate</span>
-                    <span className="info-value">{record.vitalSigns.respiratoryRate} /min</span>
-                  </div>
-                )}
-                {record.vitalSigns.oxygenSaturation && (
-                  <div className="info-item">
-                    <span className="info-label">O2 Saturation</span>
-                    <span className="info-value">{record.vitalSigns.oxygenSaturation}%</span>
-                  </div>
-                )}
+              <div className="info-item">
+                <span className="info-label">Weight</span>
+                <span className="info-value">{record.vitalSigns.weight} {record.vitalSigns.weightUnit}</span>
               </div>
-            </section>
-          )}
+              {record.vitalSigns.bmi && (
+                <div className="info-item">
+                  <span className="info-label">BMI</span>
+                  <span className="info-value">{record.vitalSigns.bmi.toFixed(2)}</span>
+                </div>
+              )}
+              {record.vitalSigns.bloodPressure && (
+                <div className="info-item">
+                  <span className="info-label">Blood Pressure</span>
+                  <span className="info-value">{record.vitalSigns.bloodPressure}</span>
+                </div>
+              )}
+              {record.vitalSigns.pulseRate && (
+                <div className="info-item">
+                  <span className="info-label">Pulse Rate</span>
+                  <span className="info-value">{record.vitalSigns.pulseRate} bpm</span>
+                </div>
+              )}
+              {record.vitalSigns.temperature && (
+                <div className="info-item">
+                  <span className="info-label">Temperature</span>
+                  <span className="info-value">{record.vitalSigns.temperature}°C</span>
+                </div>
+              )}
+              {record.vitalSigns.respiratoryRate && (
+                <div className="info-item">
+                  <span className="info-label">Respiratory Rate</span>
+                  <span className="info-value">{record.vitalSigns.respiratoryRate} /min</span>
+                </div>
+              )}
+              {record.vitalSigns.oxygenSaturation && (
+                <div className="info-item">
+                  <span className="info-label">O2 Saturation</span>
+                  <span className="info-value">{record.vitalSigns.oxygenSaturation}%</span>
+                </div>
+              )}
+            </div>
+          </section>
 
           {/* Medical Details */}
           <section className="details-section">
@@ -255,41 +192,37 @@ const MedicalRecordDetails: React.FC<MedicalRecordDetailsProps> = ({
               </svg>
               <h3 className="section-title">Medical Details</h3>
             </div>
-            {record.medicalHistory && (
-              <>
-                <div className="detail-block">
-                  <span className="detail-label">Allergies</span>
-                  <p className="detail-text">
-                    {record.medicalHistory.allergiesStatus === 'has-allergies'
-                      ? (record.medicalHistory.allergiesDetails || 'Has allergies')
-                      : 'No known allergies'}
-                  </p>
-                </div>
-                {record.medicalHistory.currentMedications && (
-                  <div className="detail-block">
-                    <span className="detail-label">Current Medications</span>
-                    <p className="detail-text">{record.medicalHistory.currentMedications}</p>
-                  </div>
-                )}
-                {record.medicalHistory.chronicDiseases && record.medicalHistory.chronicDiseases.length > 0 && (
-                  <div className="detail-block">
-                    <span className="detail-label">Chronic Diseases</span>
-                    <p className="detail-text">{record.medicalHistory.chronicDiseases.join(', ')}</p>
-                  </div>
-                )}
-                {record.medicalHistory.pastSurgeries && (
-                  <div className="detail-block">
-                    <span className="detail-label">Past Surgeries</span>
-                    <p className="detail-text">{record.medicalHistory.pastSurgeries}</p>
-                  </div>
-                )}
-                {record.medicalHistory.familyHistories && (
-                  <div className="detail-block">
-                    <span className="detail-label">Family History</span>
-                    <p className="detail-text">{record.medicalHistory.familyHistories}</p>
-                  </div>
-                )}
-              </>
+            <div className="detail-block">
+              <span className="detail-label">Allergies</span>
+              <p className="detail-text">
+                {record.medicalHistory.allergiesStatus === 'has-allergies'
+                  ? (record.medicalHistory.allergiesDetails || 'Has allergies')
+                  : 'No known allergies'}
+              </p>
+            </div>
+            {record.medicalHistory.currentMedications && (
+              <div className="detail-block">
+                <span className="detail-label">Current Medications</span>
+                <p className="detail-text">{record.medicalHistory.currentMedications}</p>
+              </div>
+            )}
+            {record.medicalHistory.chronicDiseases && record.medicalHistory.chronicDiseases.length > 0 && (
+              <div className="detail-block">
+                <span className="detail-label">Chronic Diseases</span>
+                <p className="detail-text">{record.medicalHistory.chronicDiseases.join(', ')}</p>
+              </div>
+            )}
+            {record.medicalHistory.pastSurgeries && (
+              <div className="detail-block">
+                <span className="detail-label">Past Surgeries</span>
+                <p className="detail-text">{record.medicalHistory.pastSurgeries}</p>
+              </div>
+            )}
+            {record.medicalHistory.familyHistories && (
+              <div className="detail-block">
+                <span className="detail-label">Family History</span>
+                <p className="detail-text">{record.medicalHistory.familyHistories}</p>
+              </div>
             )}
             {record.physicalExamination && (
               <>

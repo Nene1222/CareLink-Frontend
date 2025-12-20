@@ -6,9 +6,9 @@ import AddMedicineGroupModal from '../../components/inventory/AddMedicineGroupMo
 import EditMedicineGroupModal from '../../components/inventory/EditMedicineGroupModal';
 import MedicineList from './medicineList';
 import InventoryBar from '../../components/layout/inventoryBar';
-// TODO: Uncomment when backend API is integrated
 // import { inventoryService } from '../../services/api/inventoryService';
-import { medicineGroupsData, type MedicineGroup } from './data/inventoryData';
+import { inventoryService } from '../../services/api/inventoryService';
+import type { MedicineGroup } from '../../pages/inventory/data/inventoryData';
 
 
 
@@ -34,16 +34,7 @@ const InventoryPage: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      // TODO: Uncomment when backend API is integrated
-      // const groups = await inventoryService.getMedicineGroups(searchTerm || undefined);
-      
-      // Mock data for frontend testing
-      let groups = [...medicineGroupsData];
-      if (searchTerm) {
-        groups = groups.filter(group => 
-          group.title.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
+      const groups = await inventoryService.getMedicineGroups(searchTerm || undefined);
       setMedicineGroups(groups);
     } catch (err: any) {
       console.error('Failed to load medicine groups:', err);
@@ -61,13 +52,10 @@ const InventoryPage: React.FC = () => {
   const handleSaveEdit = async (groupId: string, newName: string) => {
     try {
       setError(null);
-      // TODO: Uncomment when backend API is integrated
-      // const updatedGroup = await inventoryService.updateMedicineGroup(groupId, { title: newName });
-      
-      // Mock update for frontend testing
+      const updatedGroup = await inventoryService.updateMedicineGroup(groupId, { title: newName });
       setMedicineGroups(prevGroups =>
         prevGroups.map(group =>
-          group.id === groupId ? { ...group, title: newName } : group
+          group.id === groupId ? updatedGroup : group
         )
       );
       setIsEditGroupModalOpen(false);
@@ -87,10 +75,7 @@ const InventoryPage: React.FC = () => {
     if (window.confirm('Are you sure you want to delete this medicine group? This action cannot be undone.')) {
       try {
         setError(null);
-        // TODO: Uncomment when backend API is integrated
-        // await inventoryService.deleteMedicineGroup(groupId);
-        
-        // Mock delete for frontend testing
+        await inventoryService.deleteMedicineGroup(groupId);
         setMedicineGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
       } catch (err: any) {
         console.error('Failed to delete medicine group:', err);
@@ -129,17 +114,7 @@ const InventoryPage: React.FC = () => {
   const handleSaveGroup = async (groupName: string) => {
     try {
       setError(null);
-      // TODO: Uncomment when backend API is integrated
-      // const newGroup = await inventoryService.createMedicineGroup(groupName);
-      
-      // Mock create for frontend testing
-      const newGroup: MedicineGroup = {
-        id: `group-${Date.now()}`,
-        title: groupName,
-        totalMedicines: 0,
-        totalStocks: 0,
-        medicines: []
-      };
+      const newGroup = await inventoryService.createMedicineGroup(groupName);
       setMedicineGroups([...medicineGroups, newGroup]);
     } catch (err: any) {
       console.error('Failed to create medicine group:', err);

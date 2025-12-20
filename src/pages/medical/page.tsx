@@ -1,41 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import "../../assets/style/medical/medical.css";
 import StatusBadge from '../../components/ui/status';
 import ActionMenu from '../../components/medical/actionMenu';
 import MedicalRecordDetails from '../../components/medical/medicalRecordDetails';
-// TODO: Uncomment when backend API is integrated
-// import { medicalRecordService, type MedicalRecord } from '../../services/api/medicalRecordService';
-// import { generateMedicalRecordPDF } from '../../utils/pdfGenerator';
-
-// Temporary type definition for frontend testing
-type MedicalRecord = {
-  _id?: string;
-  id?: string;
-  recordId: string;
-  status: 'Completed' | 'Draft';
-  patient: {
-    name: string;
-    id: string;
-    age: number;
-    gender: string;
-    dateOfBirth: string;
-    address?: string;
-    contactNumber?: string;
-  };
-  visit: {
-    dateOfVisit: string;
-    doctor: string;
-    reasonOfVisit?: string;
-  };
-  diagnosis?: {
-    diagnosis?: string;
-    testsOrdered?: string;
-  };
-};
-
-
-
+import { medicalRecordService, type MedicalRecord } from '../../services/api/medicalRecordService';
+import { generateMedicalRecordPDF } from '../../utils/pdfGenerator';
 
 
 
@@ -65,61 +34,13 @@ const MedicalRecord: React.FC<MedicalRecordProps> = ({
   onSetAddRecord,
   onSetUpdateRecord
 }) => {
-  const navigate = useNavigate();
   const [tableSearchTerm, setTableSearchTerm] = useState('');
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<MedicalRecord | null>(null);
-  // Mock data for frontend testing
-  const mockRecords: MedicalRecord[] = [
-    {
-      recordId: 'MR-001',
-      status: 'Completed',
-      patient: {
-        name: 'John Doe',
-        id: 'P001',
-        age: 45,
-        gender: 'Male',
-        dateOfBirth: '1979-05-15',
-        address: '123 Main St, Phnom Penh',
-        contactNumber: '+855 123 456 789',
-      },
-      visit: {
-        dateOfVisit: '2025-01-20',
-        doctor: 'Dr. Sarah Johnson',
-        reasonOfVisit: 'Regular checkup',
-      },
-      diagnosis: {
-        diagnosis: 'Hypertension, well-controlled',
-        testsOrdered: 'Blood pressure monitoring',
-      },
-    },
-    {
-      recordId: 'MR-002',
-      status: 'Draft',
-      patient: {
-        name: 'Jane Smith',
-        id: 'P002',
-        age: 32,
-        gender: 'Female',
-        dateOfBirth: '1992-08-22',
-        address: '456 Oak Ave, Phnom Penh',
-        contactNumber: '+855 987 654 321',
-      },
-      visit: {
-        dateOfVisit: '2025-01-21',
-        doctor: 'Dr. Michael Chen',
-        reasonOfVisit: 'Cough and fever',
-      },
-      diagnosis: {
-        diagnosis: 'Upper respiratory infection',
-      },
-    },
-  ];
-
-  const [records, setRecords] = useState<MedicalRecord[]>(mockRecords);
-  const [isLoading, setIsLoading] = useState(false);
+  const [records, setRecords] = useState<MedicalRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Load records from API
@@ -131,22 +52,8 @@ const MedicalRecord: React.FC<MedicalRecordProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      // TODO: Uncomment when backend API is integrated
-      // const data = await medicalRecordService.getAll(tableSearchTerm || undefined);
-      
-      // Mock data for frontend testing
-      let filtered = [...mockRecords];
-      if (tableSearchTerm) {
-        const searchLower = tableSearchTerm.toLowerCase();
-        filtered = mockRecords.filter(record =>
-          record.recordId.toLowerCase().includes(searchLower) ||
-          record.patient.name.toLowerCase().includes(searchLower) ||
-          record.patient.id.toLowerCase().includes(searchLower) ||
-          (record.diagnosis?.diagnosis || '').toLowerCase().includes(searchLower) ||
-          record.visit.doctor.toLowerCase().includes(searchLower)
-        );
-      }
-      setRecords(filtered);
+      const data = await medicalRecordService.getAll(tableSearchTerm || undefined);
+      setRecords(data);
     } catch (err: any) {
       console.error('Failed to load medical records:', err);
       setError(err.message || 'Failed to load medical records');
@@ -186,11 +93,9 @@ const MedicalRecord: React.FC<MedicalRecordProps> = ({
   const handleViewDetails = async (index: number) => {
     const record = filteredRecords[index];
     try {
-      // TODO: Uncomment when backend API is integrated
-      // const fullRecord = await medicalRecordService.getById(record._id || record.id || '');
-      
-      // Mock data for frontend testing
-      setSelectedRecord(record);
+      // Fetch full record details from API
+      const fullRecord = await medicalRecordService.getById(record._id || record.id || '');
+      setSelectedRecord(fullRecord);
       setIsDetailsOpen(true);
       handleCloseMenu();
     } catch (err: any) {
@@ -208,15 +113,14 @@ const MedicalRecord: React.FC<MedicalRecordProps> = ({
   const handleEditRecord = async (index: number) => {
     const record = filteredRecords[index];
     try {
-      // If parent provided an edit handler, prefer that (keeps current wiring)
+      // Fetch full record details from API
+      const fullRecord = await medicalRecordService.getById(record._id || record.id || '');
+      // Pass the full MedicalRecord object instead of converting to legacy format
       if (onEditRecord) {
-        onEditRecord(record as any);
-        handleCloseMenu();
-        return;
+        // onEditRecord expects MedicalRecordData, but we'll pass the full record
+        // CompleteMedicalRecord will handle both formats
+        onEditRecord(fullRecord as any);
       }
-
-      // Otherwise navigate to the complete medical record form and pass record in location state
-      navigate('/medical-record/complete', { state: { editingRecord: record } });
       handleCloseMenu();
     } catch (err: any) {
       console.error('Failed to load record for editing:', err);
@@ -227,25 +131,17 @@ const MedicalRecord: React.FC<MedicalRecordProps> = ({
 
   // Create add/update functions and expose them to parent
   useEffect(() => {
-    const addRecord = async (_record: MedicalRecordData) => {
+    const addRecord = async (record: MedicalRecordData) => {
       try {
-        // TODO: Uncomment when backend API is integrated
-        // await loadRecords(); // Reload from API
-        
-        // Mock add for frontend testing - reload records
-        await loadRecords();
+        await loadRecords(); // Reload from API
       } catch (err) {
         console.error('Failed to reload records:', err);
       }
     };
 
-    const updateRecord = async (_record: MedicalRecordData) => {
+    const updateRecord = async (record: MedicalRecordData) => {
       try {
-        // TODO: Uncomment when backend API is integrated
-        // await loadRecords(); // Reload from API
-        
-        // Mock update for frontend testing - reload records
-        await loadRecords();
+        await loadRecords(); // Reload from API
       } catch (err) {
         console.error('Failed to reload records:', err);
       }
@@ -260,17 +156,15 @@ const MedicalRecord: React.FC<MedicalRecordProps> = ({
     }
   }, [onSetAddRecord, onSetUpdateRecord]);
 
-  const handleDownloadPDF = async (_index: number) => {
-    // const record = filteredRecords[index]; // Will be used when PDF generation is implemented
+  const handleDownloadPDF = async (index: number) => {
+    const record = filteredRecords[index];
     handleCloseMenu();
     
     try {
-      // TODO: Uncomment when backend API is integrated
-      // const fullRecord = await medicalRecordService.getById(record._id || record.id || '');
-      // generateMedicalRecordPDF(fullRecord);
-      
-      // Mock PDF download for frontend testing
-      alert('PDF download will be implemented with backend integration');
+      // Fetch full record details from API
+      const fullRecord = await medicalRecordService.getById(record._id || record.id || '');
+      // Generate PDF using the utility
+      generateMedicalRecordPDF(fullRecord);
     } catch (err: any) {
       console.error('Failed to generate PDF:', err);
       alert('Failed to generate PDF');
@@ -281,11 +175,8 @@ const MedicalRecord: React.FC<MedicalRecordProps> = ({
     const record = filteredRecords[index];
     if (window.confirm(`Are you sure you want to delete medical record ${record.recordId}? This action cannot be undone.`)) {
       try {
-        // TODO: Uncomment when backend API is integrated
-        // await medicalRecordService.delete(record._id || record.id || '');
-        
-        // Mock delete for frontend testing
-        setRecords(prevRecords => prevRecords.filter(r => r.recordId !== record.recordId));
+        await medicalRecordService.delete(record._id || record.id || '');
+        await loadRecords(); // Reload records
         handleCloseMenu();
         alert(`Record ${record.recordId} has been deleted.`);
       } catch (err: any) {
@@ -306,10 +197,19 @@ const MedicalRecord: React.FC<MedicalRecordProps> = ({
         </div>
       </div>
 
-      <div className="actions-bar">
+      {/* <div className="actions-bar">
         <button
           className="add-record-btn"
-          onClick={() => (onNavigateToForm ? onNavigateToForm() : navigate('/medical-record/complete'))}
+          onClick={onNavigateToForm}
+        >
+          <span className="plus-icon">+</span>
+          Add New Record
+        </button>
+      </div> */}
+       <div className="actions-bar">
+        <button
+          className="add-record-btn"
+          onClick={onNavigateToForm}
         >
           <span className="plus-icon">+</span>
           Add New Record

@@ -45,15 +45,13 @@ const AddMedicineGroupModal: React.FC<AddMedicineGroupModalProps> = ({
       <div className="modal-overlay" onClick={handleCancel}></div>
 
       {/* Modal Card */}
-      <div className="modal-card add-medicine-group-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal-title">New Medicine Group Entry</h2>
-        <p className="modal-description">
-          Create a new group to organize related medicines and manage their stock together.
-        </p>
+        
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-group">
             <label htmlFor="groupName" className="form-label">
-              Group Medicine Name <span className="required-indicator">*</span>
+              Group Medicine Name:
             </label>
             <input
               type="text"
@@ -89,3 +87,4 @@ const AddMedicineGroupModal: React.FC<AddMedicineGroupModalProps> = ({
 };
 
 export default AddMedicineGroupModal;
+

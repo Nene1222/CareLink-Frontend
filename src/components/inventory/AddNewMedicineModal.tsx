@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import '../../assets/style/inventory/addNewMedicineModal.css';
-// TODO: Uncomment when backend API is integrated
-// import { inventoryService } from '../../services/api/inventoryService';
-
+import { inventoryService } from '../../services/api/inventoryService';
 interface AddNewMedicineModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -59,26 +57,14 @@ const AddNewMedicineModal: React.FC<AddNewMedicineModalProps> = ({
     setError(null);
 
     try {
-      // TODO: Uncomment when backend API is integrated
-      // const medicine = await inventoryService.createMedicine({
-      //   group_medicine_id: groupId,
-      //   name: formData.name.trim(),
-      //   description: formData.description.trim() || undefined,
-      //   barcode_image: formData.barcode_image || undefined,
-      //   photo: formData.photo || undefined,
-      // });
-      
-      // Mock medicine creation for frontend testing
-      const mockMedicine = {
-        _id: `med-${Date.now()}`,
-        id: `med-${Date.now()}`,
+      const medicine = await inventoryService.createMedicine({
+        group_medicine_id: groupId,
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
-        barcode_value: formData.barcode_image ? `BC-${Date.now()}` : undefined,
-        group_medicine_id: { _id: groupId }
-      };
-      
-      onSave(mockMedicine);
+        barcode_image: formData.barcode_image || undefined,
+        photo: formData.photo || undefined,
+      });
+      onSave(medicine);
       
       // Reset form
       setFormData({

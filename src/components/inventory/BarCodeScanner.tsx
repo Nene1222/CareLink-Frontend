@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 // @ts-ignore - react-qr-reader types may not be available
 import { QrReader } from 'react-qr-reader';
 import '../../assets/style/inventory/barcodeScanner.css';
-// TODO: Uncomment when backend API is integrated
-// import { inventoryService } from '../../services/api/inventoryService';
-
+import { inventoryService } from '../../services/api/inventoryService';
 interface BarCodeScannerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -55,18 +53,8 @@ const BarCodeScanner: React.FC<BarCodeScannerProps> = ({
     if (result && result.text) {
       setScannedData(result.text);
       setScanning(false);
-      
-      // TODO: Uncomment when backend API is integrated
-      // For now, mock the scan result for frontend testing
-      // In real implementation, result.text would be a barcode/QR code that needs to be looked up
-      const mockScanResult = {
-        medicineId: 'med-1', // Mock medicine ID
-        medicineName: 'Paracetamol 500mg', // Mock medicine name
-        groupId: '1' // Mock group ID
-      };
-      
       if (onScanSuccess) {
-        onScanSuccess(mockScanResult);
+        onScanSuccess(result.text);
       }
       // Auto close after successful scan (optional)
       setTimeout(() => {
@@ -88,24 +76,14 @@ const BarCodeScanner: React.FC<BarCodeScannerProps> = ({
         setScanning(false);
         
         try {
-          // TODO: Uncomment when backend API is integrated
-          // const result = await inventoryService.scanBarcode(file);
+          // Call backend to scan barcode image
+          const result = await inventoryService.scanBarcode(file);
           
-          // Mock barcode scan for frontend testing
-          // Simulate API delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          const mockResult = {
-            medicineId: 'med-1',
-            medicineName: 'Paracetamol 500mg',
-            groupId: '1'
-          };
-          
-          setScannedData(`Found: ${mockResult.medicineName}`);
+          setScannedData(`Found: ${result.medicineName}`);
           
           // Call success callback with medicine info
           if (onScanSuccess) {
-            onScanSuccess(mockResult);
+            onScanSuccess(result);
           }
           
           // Auto close after successful scan (navigation will happen via callback)

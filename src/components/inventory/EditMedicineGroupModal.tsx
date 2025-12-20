@@ -63,7 +63,7 @@ const EditMedicineGroupModal: React.FC<EditMedicineGroupModalProps> = ({
       <div className="modal-overlay" onClick={handleCancel}></div>
 
       {/* Modal Card */}
-      <div className="modal-card edit-medicine-group-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         {/* Close Button (X) */}
         <button className="close-btn" onClick={handleCancel}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
