@@ -78,10 +78,40 @@ const MedicalRecord: React.FC<MedicalRecordProps> = ({
   const handleActionClick = (event: React.MouseEvent<HTMLButtonElement>, index: number) => {
     const button = event.currentTarget;
     const rect = button.getBoundingClientRect();
+    const menuWidth = 240; // Approximate menu width
+    const viewportWidth = window.innerWidth;
+    
+    // Calculate optimal position
+    let left = rect.right - menuWidth; // Position to the left of button by default
+    let top = rect.bottom + 5; // Position below the button
+    
+    // Ensure menu stays within viewport bounds
+    if (left < 10) {
+      // If menu would go off left edge, position it to the right of button
+      left = rect.right + 5;
+      // If it would still go off right edge, align to right edge of viewport
+      if (left + menuWidth > viewportWidth - 10) {
+        left = viewportWidth - menuWidth - 10;
+      }
+    } else if (left + menuWidth > viewportWidth - 10) {
+      // If menu would go off right edge, align to right edge
+      left = viewportWidth - menuWidth - 10;
+    }
+    
+    // Ensure menu stays within vertical bounds
+    const viewportHeight = window.innerHeight;
+    const menuHeight = 250; // Approximate menu height
+    if (top + menuHeight > viewportHeight - 10) {
+      // Position above button if there's not enough space below
+      top = rect.top - menuHeight - 5;
+      if (top < 10) {
+        top = 10; // If still doesn't fit, align to top
+      }
+    }
     
     setMenuPosition({
-      top: rect.bottom + 5,
-      left: rect.left - 200, // Offset to show menu to the left of the button
+      top,
+      left,
     });
     setActiveMenu(index);
   };

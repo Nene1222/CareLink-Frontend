@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../../../assets/style/medical/form/patientForm.css';
+import type { Doctor, Patient } from '../../../services/api/mockUsersService';
 
 interface PatientFormData {
   name: string;
@@ -10,6 +11,8 @@ interface PatientFormData {
   address: string;
   contactNumber: string;
   dateOfVisit: string;
+  doctor: string;
+  accountOwner: string;
 }
 
 interface PatientFormProps {
@@ -25,11 +28,15 @@ interface PatientFormProps {
     };
     visit?: {
       dateOfVisit?: string | Date;
+      doctor?: string;
+      accountOwner?: string;
     };
   };
+  doctors?: Doctor[];
+  patients?: Patient[];
 }
 
-const PatientForm: React.FC<PatientFormProps> = ({ initialData }) => {
+const PatientForm: React.FC<PatientFormProps> = ({ initialData, doctors = [], patients = [] }) => {
   const [formData, setFormData] = useState<PatientFormData>({
     name: '',
     gender: '',
@@ -38,8 +45,54 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData }) => {
     id: '',
     address: '',
     contactNumber: '',
-    dateOfVisit: ''
+    dateOfVisit: '',
+    doctor: '',
+    accountOwner: ''
   });
+  const [accountOwnerSearchTerm, setAccountOwnerSearchTerm] = useState('');
+  const [showAccountOwnerDropdown, setShowAccountOwnerDropdown] = useState(false);
+  const [filteredAccountOwners, setFilteredAccountOwners] = useState<Patient[]>([]);
+
+  // Filter account owners based on search term
+  useEffect(() => {
+    if (accountOwnerSearchTerm.trim()) {
+      const filtered = patients.filter(accountOwner =>
+        accountOwner.name.toLowerCase().includes(accountOwnerSearchTerm.toLowerCase()) ||
+        accountOwner.id.toLowerCase().includes(accountOwnerSearchTerm.toLowerCase())
+      );
+      setFilteredAccountOwners(filtered);
+      setShowAccountOwnerDropdown(filtered.length > 0);
+    } else {
+      setFilteredAccountOwners([]);
+      setShowAccountOwnerDropdown(false);
+    }
+  }, [accountOwnerSearchTerm, patients]);
+
+  // Get the selected account owner name for display
+  const selectedAccountOwnerName = formData.accountOwner 
+    ? patients.find(p => p.id === formData.accountOwner || p.name === formData.accountOwner)?.name || formData.accountOwner
+    : '';
+
+  const handleAccountOwnerSelect = (accountOwner: Patient) => {
+    setFormData(prev => ({
+      ...prev,
+      accountOwner: accountOwner.name
+    }));
+    setAccountOwnerSearchTerm('');
+    setShowAccountOwnerDropdown(false);
+  };
+
+  const handleAccountOwnerSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setAccountOwnerSearchTerm(value);
+    // If the search term is cleared, clear the selected account owner
+    if (!value.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        accountOwner: ''
+      }));
+    }
+  };
 
   // Populate form when initialData changes
   useEffect(() => {
@@ -59,12 +112,14 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData }) => {
         id: initialData.patient?.id || '',
         address: initialData.patient?.address || '',
         contactNumber: initialData.patient?.contactNumber || '',
-        dateOfVisit: formatDate(initialData.visit?.dateOfVisit)
+        dateOfVisit: formatDate(initialData.visit?.dateOfVisit),
+        doctor: initialData.visit?.doctor || '',
+        accountOwner: initialData.visit?.accountOwner || ''
       });
     }
   }, [initialData]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -90,24 +145,135 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData }) => {
             </svg>
           </div>
           <div className="header-text">
-            <h2 className="form-title">Patient Information</h2>
-            <p className="form-subtitle">Basic patients details and contacts information</p>
+            <h2 className="form-title">Patient Demographics</h2>
+            <p className="form-subtitle">Complete patient identification and contact details</p>
           </div>
         </div>
 
         {/* Form Fields */}
         <div className="form-content">
+          {/* Account Owner and Attending Physician Row */}
+          <div className="form-row">
+            <div className="form-group full-width" style={{ position: 'relative' }}>
+              <label className="form-label">
+                <span className="form-label-hint">Optional - for reference only</span>
+              </label>
+              {/* Hidden input to store the account owner value for form collection */}
+              <input
+                type="hidden"
+                name="accountOwner"
+                value={formData.accountOwner}
+              />
+              {formData.accountOwner && !accountOwnerSearchTerm ? (
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    value={selectedAccountOwnerName}
+                    readOnly
+                    className="form-input"
+                    style={{ cursor: 'pointer', backgroundColor: '#f8f9fa' }}
+                    onClick={() => {
+                      setAccountOwnerSearchTerm('');
+                      setShowAccountOwnerDropdown(true);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFormData(prev => ({ ...prev, accountOwner: '' }));
+                      setAccountOwnerSearchTerm('');
+                    }}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      color: '#999',
+                      padding: '0',
+                      width: '20px',
+                      height: '20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={accountOwnerSearchTerm}
+                    onChange={handleAccountOwnerSearchChange}
+                    onFocus={() => {
+                      if (accountOwnerSearchTerm.trim()) {
+                        setShowAccountOwnerDropdown(true);
+                      }
+                    }}
+                    onBlur={() => {
+                      // Delay to allow click on dropdown item
+                      setTimeout(() => setShowAccountOwnerDropdown(false), 200);
+                    }}
+                    className="form-input search-input"
+                    placeholder="Search by account owner name or ID"
+                  />
+                  {showAccountOwnerDropdown && filteredAccountOwners.length > 0 && (
+                    <div className="patient-dropdown">
+                      {filteredAccountOwners.map((accountOwner) => (
+                        <div
+                          key={accountOwner.id}
+                          className="patient-dropdown-item"
+                          onMouseDown={(e) => {
+                            e.preventDefault(); // Prevent onBlur from firing
+                            handleAccountOwnerSelect(accountOwner);
+                          }}
+                        >
+                          <div className="patient-dropdown-name">{accountOwner.name}</div>
+                          <div className="patient-dropdown-details">
+                            ID: {accountOwner.id} • Age: {accountOwner.age} • {accountOwner.gender}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="form-group full-width">
+              <label className="form-label">Attending Physician</label>
+              <select
+                name="doctor"
+                value={formData.doctor}
+                onChange={handleInputChange}
+                className="form-input form-select"
+              >
+                <option value="">Select attending physician</option>
+                {doctors.map((doctor) => (
+                  <option key={doctor._id} value={doctor.name}>
+                    {doctor.name} {doctor.role ? `- ${doctor.role}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
           {/* Name and Gender Row */}
           <div className="form-row">
             <div className="form-group full-width">
-              <label className="form-label">Name</label>
+              <label className="form-label">Patient Full Name</label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
                 className="form-input"
-                placeholder="Clinic CareLink Network"
+                placeholder="Enter the patient's full legal name (not the account owner)"
               />
             </div>
 
@@ -145,42 +311,30 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData }) => {
             </div>
           </div>
 
-          {/* Date of Birth, Age, ID Row */}
-          <div className="form-row three-cols">
-            <div className="form-group">
+          {/* Date of Birth and Age Row */}
+          <div className="form-row">
+            <div className="form-group full-width">
               <label className="form-label">Date of Birth</label>
-              <div className="input-with-icon">
-                <input
-                  type="date"
-                  name="dateOfBirth"
-                  value={formData.dateOfBirth}
-                  onChange={handleInputChange}
-                  className="form-input"
-                />
-              </div>
+              <input
+                type="date"
+                name="dateOfBirth"
+                value={formData.dateOfBirth}
+                onChange={handleInputChange}
+                className="form-input"
+              />
             </div>
 
-            <div className="form-group">
+            <div className="form-group full-width">
               <label className="form-label">Age</label>
               <input
-                type="text"
+                type="number"
                 name="age"
                 value={formData.age}
                 onChange={handleInputChange}
                 className="form-input"
-                placeholder=""
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">ID</label>
-              <input
-                type="text"
-                name="id"
-                value={formData.id}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder=""
+                placeholder="Years"
+                min="0"
+                max="150"
               />
             </div>
           </div>
@@ -188,14 +342,14 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData }) => {
           {/* Address and Contact Number Row */}
           <div className="form-row">
             <div className="form-group full-width">
-              <label className="form-label">Address</label>
+              <label className="form-label">Residential Address</label>
               <input
                 type="text"
                 name="address"
                 value={formData.address}
                 onChange={handleInputChange}
                 className="form-input"
-                placeholder=""
+                placeholder="Street address, city, state, postal code"
               />
             </div>
 
@@ -207,7 +361,7 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData }) => {
                 value={formData.contactNumber}
                 onChange={handleInputChange}
                 className="form-input"
-                placeholder=""
+                placeholder="Phone number with country code"
               />
             </div>
           </div>
@@ -215,7 +369,7 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData }) => {
           {/* Date of Visit Row */}
           <div className="form-row">
             <div className="form-group full-width">
-              <label className="form-label">Date Of Visit</label>
+              <label className="form-label">Date of Visit</label>
               <input
                 type="date"
                 name="dateOfVisit"

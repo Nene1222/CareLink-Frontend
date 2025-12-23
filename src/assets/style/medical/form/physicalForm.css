@@ -26,33 +26,70 @@
 }
 .exam-icon svg { width: 34px; height: 34px; color: #f2b178; }
 .exam-header-text { flex: 1; }
-.exam-title { font-size: 1.7rem; font-weight: 700; color: #232323; margin: 0 0 2px 0; }
-.exam-subtitle { font-size: 15px; color: #8a8a8a; margin: 0; font-weight: 600; }
+.exam-title { 
+  font-size: 2rem; 
+  font-weight: 700; 
+  color: #1a1a1a; 
+  margin: 0 0 6px 0; 
+  letter-spacing: -0.02em;
+}
+.exam-subtitle { 
+  font-size: 1.05rem; 
+  color: #6b6b6b; 
+  margin: 0; 
+  font-weight: 500;
+  line-height: 1.5;
+}
 
 .exam-content { display: flex; flex-direction: column; gap: 24px; }
 .exam-section { display: flex; flex-direction: column; gap: 4px; }
-.exam-label { font-size: 1.13rem; font-weight: bold; color: #181818; margin-bottom: 0px; }
+.exam-label { 
+  font-size: 1.25rem; 
+  font-weight: 600; 
+  color: #2c2c2c; 
+  margin-bottom: 8px; 
+  letter-spacing: -0.01em;
+}
 
-.exam-row { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.exam-row { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 24px; 
+}
 .exam-section.full-width { width: 100%; }
 
 .exam-textarea {
   width: 100%;
-  padding: 14px 16px;
+  padding: 14px 20px;
   font-size: 1.05rem;
-  border: none;
-  background: #f4f3f3;
+  border: 1.5px solid #e0e0e0;
+  background: #ffffff;
   font-weight: 500;
-  border-radius: 16px;
-  color: #191919;
-  margin-bottom: 1px;
-  transition: box-shadow .11s;
+  border-radius: 12px;
+  color: #1a1a1a;
+  margin-bottom: 3px;
+  transition: all 0.2s ease;
   outline: none;
-  box-shadow: none;
-  min-height: 40px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-height: 48px;
+  resize: vertical;
+  font-family: inherit;
 }
-.exam-textarea:focus { background: #ececec; box-shadow: 0 0 0 1.5px #b5c8e7; }
-.exam-textarea.large { min-height: 82px; }
+.exam-textarea:hover {
+  border-color: #c0c0c0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.exam-textarea:focus { 
+  background-color: #ffffff;
+  border-color: #5f6cff;
+  box-shadow: 0 0 0 3px rgba(95, 108, 255, 0.1), 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.exam-textarea::placeholder {
+  color: #9e9e9e;
+  opacity: 0.8;
+  font-weight: 400;
+}
+.exam-textarea.large { min-height: 100px; }
 
 @media (max-width: 968px) {
   .exam-header { flex-direction: column; text-align: center; gap: 10px; }

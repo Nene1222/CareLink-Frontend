@@ -196,9 +196,9 @@ const MedicineList: React.FC<MedicineListProps> = ({ groupName, groupId, onBack,
       <div className="section-header">
         <h2 className="section-title">Available Medicine in {groupName} Group</h2>
         <div className="section-actions">
-          <button className="action-btn-primary" onClick={handleScanBarcode}>
+          {/* <button className="action-btn-primary" onClick={handleScanBarcode}>
             Scan Bar Code
-          </button>
+          </button> */}
           <button className="action-btn-primary" onClick={handleAddNewMedicine}>
             <span className="plus-icon">+</span>
             Add New Medicine

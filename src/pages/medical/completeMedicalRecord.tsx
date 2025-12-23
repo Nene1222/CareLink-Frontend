@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import '../../assets/style/medical/CompleteMedicalRecord.css';
 import type { MedicalRecordData } from './page';
 import { medicalRecordService, type MedicalRecord } from '../../services/api/medicalRecordService';
+import { mockUsersService, type Doctor, type Patient } from '../../services/api/mockUsersService';
 
 // Import all your form components
 import PatientForm from '../../components/medical/form/patientForm';
@@ -26,6 +27,25 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
   const formRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fullRecord, setFullRecord] = useState<MedicalRecord | null>(null);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
+
+  // Fetch doctors and patients on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [doctorsList, patientsList] = await Promise.all([
+          mockUsersService.getDoctors(),
+          mockUsersService.getPatients()
+        ]);
+        setDoctors(doctorsList);
+        setPatients(patientsList);
+      } catch (err) {
+        console.error('Failed to fetch doctors/patients:', err);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Fetch full record data when editingRecord is provided
   useEffect(() => {
@@ -76,7 +96,6 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
 
     // Collect patient form data
     const patientNameInput = formRef.current.querySelector<HTMLInputElement>('input[name="name"]');
-    const patientIdInput = formRef.current.querySelector<HTMLInputElement>('input[name="id"]');
     const ageInput = formRef.current.querySelector<HTMLInputElement>('input[name="age"]');
     
     // Get gender from checked radio button - check the label text since radio buttons don't have value attributes
@@ -98,6 +117,8 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
     const addressInput = formRef.current.querySelector<HTMLInputElement>('input[name="address"]');
     const contactInput = formRef.current.querySelector<HTMLInputElement>('input[name="contactNumber"]');
     const dateOfVisitInput = formRef.current.querySelector<HTMLInputElement>('input[name="dateOfVisit"]');
+    const doctorSelect = formRef.current.querySelector<HTMLSelectElement>('select[name="doctor"]');
+    const accountOwnerInput = formRef.current.querySelector<HTMLInputElement>('input[name="accountOwner"][type="hidden"]');
     
     // Collect medical history
     const reasonOfVisitInput = formRef.current.querySelector<HTMLTextAreaElement>('textarea[name="reasonOfVisit"]');
@@ -151,8 +172,8 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
     const proceduresPerformedInput = formRef.current.querySelector<HTMLTextAreaElement>('textarea[name="proceduresPerformed"]');
     const instructionInput = formRef.current.querySelector<HTMLTextAreaElement>('textarea[name="instruction"]');
     
-    // Default doctor (can be made dynamic)
-    const doctor = 'Dr. Michael Chen';
+    // Get doctor from form select
+    const doctor = doctorSelect?.value || '';
 
     // Calculate age from date of birth if not provided
     let age = parseInt(ageInput?.value || '0');
@@ -169,7 +190,7 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
     return {
       patient: {
         name: patientNameInput?.value || '',
-        id: patientIdInput?.value || '',
+        id: '', // Patient ID field removed from form
         gender: gender, // Use the gender extracted from radio button label
         dateOfBirth: dateOfBirthInput?.value || new Date().toISOString(),
         age: age || 0,
@@ -179,6 +200,7 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
       visit: {
         dateOfVisit: dateOfVisitInput?.value || new Date().toISOString(),
         doctor: doctor,
+        accountOwner: accountOwnerInput?.value || '',
         reasonOfVisit: reasonOfVisitInput?.value || ''
       },
       medicalHistory: {
@@ -225,8 +247,8 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
     const formData = collectAllFormData();
     
     // Validate required fields
-    if (!formData.patient?.name || !formData.patient?.id) {
-      alert('Please fill in at least Patient Name and Patient ID');
+    if (!formData.patient?.name) {
+      alert('Please fill in Patient Name');
       return;
     }
 
@@ -311,8 +333,8 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
   const handleSaveDraft = async () => {
     const formData = collectAllFormData();
     
-    if (!formData.patient?.name || !formData.patient?.id) {
-      alert('Please fill in at least Patient Name and Patient ID');
+    if (!formData.patient?.name) {
+      alert('Please fill in Patient Name');
       return;
     }
 
@@ -385,7 +407,11 @@ const CompleteMedicalRecord: React.FC<CompleteMedicalRecordProps> = ({
       <div className="forms-container">
         {/* 1. Patient Information */}
         <div className="form-section">
-          <PatientForm initialData={fullRecord || undefined} />
+          <PatientForm 
+            initialData={fullRecord || undefined} 
+            doctors={doctors} 
+            patients={patients}
+          />
         </div>
 
         {/* 2. Medical History */}

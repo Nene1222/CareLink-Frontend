@@ -3,14 +3,18 @@
     background: white;
     border-radius: 16px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
+    z-index: 9999;
     min-width: 240px;
     padding: 0;
-  overflow: hidden; /* Keep the original overflow hidden */
-  /* Allow the menu to scroll if its content is taller than the viewport */
-  max-height: calc(100vh - 32px);
-  overflow-y: auto;
+    overflow: visible;
+    max-height: calc(100vh - 32px);
+    pointer-events: auto;
     animation: slideIn 0.2s ease-out;
+  }
+  
+  .action-menu-content {
+    overflow-y: auto;
+    max-height: calc(100vh - 32px);
   }
   
   @keyframes slideIn {
@@ -53,6 +57,9 @@
     color: #333;
     text-align: left;
     transition: background-color 0.2s ease;
+    pointer-events: auto;
+    position: relative;
+    z-index: 1;
   }
   
   .action-menu-item:hover {

@@ -16,6 +16,7 @@ export interface MedicalRecord {
   visit: {
     dateOfVisit: string
     doctor: string
+    accountOwner?: string
     reasonOfVisit?: string
   }
   medicalHistory: {
