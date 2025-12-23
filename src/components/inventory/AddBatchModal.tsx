@@ -223,16 +223,21 @@ const AddBatchModal: React.FC<AddBatchModalProps> = ({
             </div>
             <div className="form-group">
               <label className="form-label">Purchase Price:</label>
-              <input
-                type="number"
-                name="purchasingPrice"
-                value={formData.purchasingPrice}
-                onChange={handleInputChange}
-                className={`form-input ${errors.purchasingPrice ? 'error' : ''}`}
-                placeholder="Enter purchase price"
-                min="0"
-                step="0.01"
-              />
+                <div className="input-with-symbol">
+                  <span className="symbol">$</span>
+                  <input
+                    type="number"
+                    name="purchasingPrice"
+                    value={formData.purchasingPrice}
+                    onChange={handleInputChange}
+                    className={`form-input ${errors.purchasingPrice ? 'error' : ''}`}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    inputMode="decimal"
+                    aria-label="Purchase price in dollars"
+                  />
+                </div>
               {errors.purchasingPrice && <span className="error-message">{errors.purchasingPrice}</span>}
             </div>
           </div>
@@ -240,16 +245,21 @@ const AddBatchModal: React.FC<AddBatchModalProps> = ({
           {/* Setting Price */}
           <div className="form-group">
             <label className="form-label">Setting Price:</label>
-            <input
-              type="number"
-              name="settingPrice"
-              value={formData.settingPrice}
-              onChange={handleInputChange}
-              className={`form-input ${errors.settingPrice ? 'error' : ''}`}
-              placeholder="Enter setting price"
-              min="0"
-              step="0.01"
-            />
+            <div className="input-with-symbol">
+              <span className="symbol">$</span>
+              <input
+                type="number"
+                name="settingPrice"
+                value={formData.settingPrice}
+                onChange={handleInputChange}
+                className={`form-input ${errors.settingPrice ? 'error' : ''}`}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                aria-label="Setting price in dollars"
+              />
+            </div>
             {errors.settingPrice && <span className="error-message">{errors.settingPrice}</span>}
           </div>
 
@@ -258,7 +268,7 @@ const AddBatchModal: React.FC<AddBatchModalProps> = ({
             <button type="button" className="btn-cancel" onClick={handleCancel}>
               Cancel
             </button>
-            <button type="submit" className="">
+            <button type="submit" className="btn-save">
               Save
             </button>
           </div>
