@@ -16,7 +16,7 @@ export const BarcodeScanner = ({ onClose, onScanSuccess }: BarcodeScannerProps) 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [scannedBarcode, setScannedBarcode] = useState<string | null>(null);
-
+  const hasScannedRef = useRef(false);
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
 
   useEffect(() => {
@@ -50,12 +50,18 @@ export const BarcodeScanner = ({ onClose, onScanSuccess }: BarcodeScannerProps) 
         codeReaderRef.current.decodeFromVideoElementContinuously(
           videoRef.current!,
           (result, err) => {
-            if (result) {
+            if (result && !hasScannedRef.current) {
+              hasScannedRef.current = true; // 🔒 lock scanning
               const code = result.getText();
+              
               setScannedBarcode(code); // ✅ 2. Save scanned barcode to state
-              onScanSuccess(result.getText());
-              // 5️⃣ OPTIONAL: stop camera after first scan
-              stopCamera();
+              // onScanSuccess(result.getText());
+              // // 5️⃣ OPTIONAL: stop camera after first scan
+              // stopCamera();
+               // ✅ only update state
+              // setScannedBarcode(prev =>
+              //   prev === code ? prev : code // prevent rapid same-value updates
+              // );
             }
             if (err && !(err instanceof NotFoundException)) {
               console.error('Barcode scan error:', err);
@@ -93,15 +99,21 @@ export const BarcodeScanner = ({ onClose, onScanSuccess }: BarcodeScannerProps) 
     };
   }, []);
 
-  const handleManualInput = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const barcode = formData.get('barcode') as string;
-    if (barcode) {
-      setScannedBarcode(barcode.trim()); // ✅ 3. Update scanned barcode when manual input is used
-      onScanSuccess(barcode.trim());
-    }
-  };
+  // const handleManualInput = (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   const formData = new FormData(e.currentTarget);
+  //   const barcode = formData.get('barcode') as string;
+  //   if (barcode) {
+  //     setScannedBarcode(barcode.trim()); // ✅ 3. Update scanned barcode when manual input is used
+  //     onScanSuccess(barcode.trim());
+  //   }
+  // };
+  const handleManualInput = (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!scannedBarcode) return;
+
+  onScanSuccess(scannedBarcode); // ✅ NOW add to cart
+};
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
@@ -148,6 +160,8 @@ export const BarcodeScanner = ({ onClose, onScanSuccess }: BarcodeScannerProps) 
       </div>
 
       <div className="bg-gray-900 p-4">
+         {/* Add Back button here */}
+
       {scannedBarcode && (
           <div className="text-center text-green-400 font-bold mb-4">
             Scanned Barcode: {scannedBarcode}
@@ -162,6 +176,9 @@ export const BarcodeScanner = ({ onClose, onScanSuccess }: BarcodeScannerProps) 
             <input
               type="text"
               name="barcode"
+              value={scannedBarcode ?? ''}
+              onChange={(e) => setScannedBarcode(e.target.value)}
+
               placeholder="Enter barcode number"
               className="flex-1 px-4 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -171,6 +188,13 @@ export const BarcodeScanner = ({ onClose, onScanSuccess }: BarcodeScannerProps) 
             >
               Add
             </button>
+                <button
+                  type="button"   // ✅ VERY IMPORTANT
+                  onClick={onClose} // close scanner and go back
+                  className="px-6 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
+                >
+                  Back
+                </button>
           </div>
         </form>
       </div>
