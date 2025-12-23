@@ -1,0 +1,13 @@
+[
+  { "medicine_id": "med_001", "quantity": 50, "setting_price": 0.01, "expiry_date": "2026-05-01" },
+  { "medicine_id": "med_001", "quantity": 30, "setting_price": 0.01, "expiry_date": "2026-12-01" },
+  { "medicine_id": "med_002", "quantity": 100, "setting_price": 0.02, "expiry_date": "2025-08-01" },
+  { "medicine_id": "med_003", "quantity": 60, "setting_price": 0.05, "expiry_date": "2026-01-01" },
+  { "medicine_id": "med_004", "quantity": 40, "setting_price": 0.03, "expiry_date": "2025-12-01" },
+  { "medicine_id": "med_005", "quantity": 80, "setting_price": 0.01, "expiry_date": "2026-07-01" },
+  { "medicine_id": "med_006", "quantity": 70, "setting_price": 0.04, "expiry_date": "2026-03-01" },
+  { "medicine_id": "med_007", "quantity": 90, "setting_price": 0.02, "expiry_date": "2025-11-01" },
+  { "medicine_id": "med_008", "quantity": 55, "setting_price": 0.03, "expiry_date": "2026-06-01" },
+  { "medicine_id": "med_009", "quantity": 65, "setting_price": 0.05, "expiry_date": "2025-10-01" },
+  { "medicine_id": "med_010", "quantity": 75, "setting_price": 0.04, "expiry_date": "2026-02-01" }
+]

@@ -31,6 +31,7 @@ export const Checkout = ({
   const [cashReceived, setCashReceived] = useState('');
   const [currency, setCurrency] = useState<'USD' | 'KHR'>('USD');
   const [qrPaid, setQrPaid] = useState(false);
+  const API_BASE_URL = import.meta.env.VITE_API_URL;
 
   // Added states for QR functionality
   const [qrData, setQrData] = useState<{ qr: string; md5: string } | null>(null);
@@ -125,7 +126,7 @@ export const Checkout = ({
 
         try {
           // 1️⃣ Request QR from backend
-          const res = await fetch(`/api/payment/create`, {
+          const res = await fetch(`${API_BASE_URL}/api/payment/create`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ amount: total }),
@@ -144,7 +145,7 @@ export const Checkout = ({
             }
 
             try {
-              const checkRes = await fetch(`/api/payment/check`, {
+              const checkRes = await fetch(`${API_BASE_URL}/api/payment/check`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ md5: qrResponse.md5 }),
@@ -351,7 +352,7 @@ export const Checkout = ({
                       <div className="text-center">
                         <div className="w-64 h-64 bg-gray-200 rounded-lg flex items-center justify-center mb-4">
                           <div className="w-64 h-64 bg-gray-200 rounded-lg flex items-center justify-center mb-4">
-                            {qrData ? (
+                            {qrData?.qr ? (
                               <QRCodeCanvas value={qrData.qr} size={200} />
                             ) : (
                               <p className="text-gray-500 text-sm">Generating QR...</p>

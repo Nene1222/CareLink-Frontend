@@ -1,0 +1,8 @@
+[
+  { "_id": "grp_001", "group_name": "Analgesic" },
+  { "_id": "grp_002", "group_name": "Antibiotic" },
+  { "_id": "grp_003", "group_name": "Antihistamine" },
+  { "_id": "grp_004", "group_name": "Vitamin" },
+  { "_id": "grp_005", "group_name": "Diabetes" },
+  { "_id": "grp_006", "group_name": "Gastrointestinal" }
+]

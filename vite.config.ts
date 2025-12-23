@@ -24,6 +24,7 @@ export default defineConfig({
       },
     },
     // Add this line to allow your ngrok host
-    // allowedHosts: ["ungummed-metabiotically-maxwell.ngrok-free.dev"],
+    allowedHosts: ["ungummed-metabiotically-maxwell.ngrok-free.dev"],
+    // allowedHosts: ["unbragging-aurelia-unintroductive.ngrok-free.dev"],
   },
 });

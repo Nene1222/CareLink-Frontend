@@ -24,8 +24,10 @@ const POS = () => {
   const [date] = useState(new Date().toISOString());
   const [customerPhone, setCustomerPhone] = useState('');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const BACKEND_URL = "/api/cart"
-  const BACKEND_WS = "ws://localhost:3000/api/cart/ws";
+  // const BACKEND_URL = "/api/cart"
+  const BACKEND_URL = import.meta.env.VITE_API_URL
+  const BACKEND_WS = import.meta.env.VITE_API_WS_BASE_URL
+  // const BACKEND_WS = "ws://localhost:3000/api/cart/ws";
 
   useEffect(() => {
     const ws = new WebSocket(BACKEND_WS);
@@ -69,8 +71,8 @@ const POS = () => {
     const medicine = medicines.find((m) => m.barcode === barcode);
     if (medicine) {
       addMedicineToCart(medicine); // ✅ add to cart in POS
-      setShowScanner(false);        // close scanner
-      alert(`Added ${medicine.name} to cart`);
+      // setShowScanner(false);        // close scanner
+      // alert(`Added ${medicine.name} to cart`);
     } else {
       alert('Invalid barcode - Product not found');
     }
@@ -91,7 +93,7 @@ const POS = () => {
   };
 
   try {
-    const response = await axios.post(`${BACKEND_URL}/add`, newItem);
+    const response = await axios.post(`${BACKEND_URL}/api/cart/add`, newItem);
     console.log("Cart updated on backend:", response.data);
   } catch (err) {
     console.error("Failed to add medicine to cart:", err);
@@ -109,7 +111,7 @@ const POS = () => {
     };
 
     try {
-      const response = await axios.post(`${BACKEND_URL}/add`, newItem);
+      const response = await axios.post(`${BACKEND_URL}/api/cart/add`, newItem);
       console.log("Cart updated on backend:", response.data);
     } catch (err) {
       console.error("Failed to add service to cart:", err);
@@ -123,7 +125,7 @@ const POS = () => {
 
   const newQuantity = Math.max(0, item.quantity + delta); // allow 0
   try {
-    const response = await axios.patch(`${BACKEND_URL}/update/${id}`, { quantity: newQuantity });
+    const response = await axios.patch(`${BACKEND_URL}/api/cart/update/${id}`, { quantity: newQuantity });
     console.log("Cart quantity updated:", response.data);
   } catch (err) {
     console.error("Failed to update cart item:", err);
@@ -132,7 +134,7 @@ const POS = () => {
 
 const removeCartItem = async (id: string) => {
   try {
-    const response = await axios.patch(`${BACKEND_URL}/update/${id}`, { quantity: 0 });
+    const response = await axios.patch(`${BACKEND_URL}/api/cart/update/${id}`, { quantity: 0 });
     console.log("Item removed from cart:", response.data);
   } catch (err) {
     console.error("Failed to remove cart item:", err);
@@ -167,59 +169,58 @@ const removeCartItem = async (id: string) => {
     setShowCheckout(true);
   };
 
-  const handleCompletePayment = () => {
-    setShowCheckout(false);
-    setShowCompleteDialog(true);
+  // const handleCompletePayment = () => {
+  //   setShowCheckout(false);
+  //   setShowCompleteDialog(true);
+  // };
+
+const handleCompletePayment = async () => {
+  if (cartItems.length === 0) {
+    alert("Cart is empty");
+    return;
+  }
+
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + item.quantity * item.unitPrice,
+    0
+  );
+  const tax = calculateTax(subtotal);
+  const total = calculateTotal(subtotal, tax);
+
+  const payload = {
+    invoiceId,
+    customerPhone,
+    date,
+    subtotal,
+    tax,
+    total,
+    items: cartItems.map(item => ({
+      itemId: item.id,
+      itemName: item.name,
+      itemPrice: item.unitPrice,
+      itemQuantity: item.quantity,
+      itemTotalPrice: item.unitPrice * item.quantity,
+      type: item.type, // IMPORTANT for stock update
+    })),
   };
 
-//   const handleCompletePayment = async () => {
-//   if (cartItems.length === 0) {
-//     alert("Cart is empty");
-//     return;
-//   }
+  try {
+    await axios.post("/api/invoice", payload);
+    console.log("Invoice + items saved successfully");
 
-//   // Prepare invoice data
-//   const subtotal = cartItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-//   const tax = calculateTax(subtotal);
-//   const total = calculateTotal(subtotal, tax);
+    setShowCheckout(false);
+    setShowCompleteDialog(true);
+  } catch (err) {
+    console.error("Failed to save invoice:", err);
+    alert("Failed to save invoice. Please try again.");
+  }
+};
 
-//   const invoiceData = {
-//     invoiceId,
-//     customerPhone,
-//     date,
-//     subtotal,
-//     tax,
-//     total,
-//   };
-
-//   const invoiceDetailData = cartItems.map((item) => ({
-//     invoiceId,
-//     itemId: item.id,
-//     itemName: item.name,
-//     itemPrice: item.unitPrice,
-//     itemQuantity: item.quantity,
-//     itemTotalPrice: item.unitPrice * item.quantity,
-//   }));
-
-//   try {
-//     // Send invoice and invoice details to backend
-//     await axios.post("/api/invoice", invoiceData);
-//     await axios.post("/api/invoice-detail", { details: invoiceDetailData });
-//     console.log("Invoice and details saved to backend successfully");
-
-//     // Show payment complete dialog
-//     setShowCheckout(false);
-//     setShowCompleteDialog(true);
-//   } catch (err) {
-//     console.error("Failed to save invoice:", err);
-//     alert("Failed to save invoice. Please try again.");
-//   }
-// };
 
   const handleCloseCompleteDialog = async () => {
     try {
       // Call backend to clear cart
-      await axios.delete(`${BACKEND_URL}/`);
+      await axios.delete(`${BACKEND_URL}/api/cart/`);
       console.log("Backend cart cleared successfully");
       
       // Clear local state
