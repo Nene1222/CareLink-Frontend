@@ -3,7 +3,8 @@ import "../../assets/style/medical/medical.css";
 import StatusBadge from '../../components/ui/status';
 import ActionMenu from '../../components/medical/actionMenu';
 import MedicalRecordDetails from '../../components/medical/medicalRecordDetails';
-import { medicalRecordService, type MedicalRecord } from '../../services/api/medicalRecordService';
+import { medicalRecordService } from '../../services/api/medicalRecordService';
+import type { MedicalRecord } from '../../services/api/medicalRecordService';
 import { generateMedicalRecordPDF } from '../../utils/pdfGenerator';
 
 
@@ -28,8 +29,8 @@ interface MedicalRecordProps {
   onSetUpdateRecord?: (fn: (record: MedicalRecordData) => void) => void;
 }
 
-const MedicalRecord: React.FC<MedicalRecordProps> = ({ 
-  onNavigateToForm, 
+const MedicalRecord: React.FC<MedicalRecordProps> = ({
+  onNavigateToForm,
   onEditRecord,
   onSetAddRecord,
   onSetUpdateRecord
@@ -42,6 +43,7 @@ const MedicalRecord: React.FC<MedicalRecordProps> = ({
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
 
   // Load records from API
   useEffect(() => {
@@ -206,7 +208,7 @@ const MedicalRecord: React.FC<MedicalRecordProps> = ({
           Add New Record
         </button>
       </div> */}
-       <div className="actions-bar">
+      <div className="actions-bar">
         <button
           className="add-record-btn"
           onClick={onNavigateToForm}
@@ -280,7 +282,7 @@ const MedicalRecord: React.FC<MedicalRecordProps> = ({
                       <StatusBadge status={record.status} />
                     </td>
                     <td>
-                      <button 
+                      <button
                         className="action-btn"
                         onClick={(e) => handleActionClick(e, index)}
                       >

@@ -17,7 +17,10 @@ interface Attendance {
   checkOutTime?: string
   date: string
   status: "present" | "absent" | "late"
-  approval?: "pending" | "accepted" | "rejected"
+  approval?: "pending" | "ask_permission" | "accepted" | "rejected"
+  notes?: string
+  requestReason?: string
+  requestImage?: string
 }
 
 interface Organization {
@@ -49,6 +52,7 @@ const initialAttendance: Attendance[] = [
     checkOutTime: undefined,
     date: new Date().toISOString().split("T")[0],
     status: "present",
+    approval: "pending",
   },
   {
     id: "2",
@@ -63,6 +67,7 @@ const initialAttendance: Attendance[] = [
     checkOutTime: undefined,
     date: new Date().toISOString().split("T")[0],
     status: "late",
+    approval: "pending",
   },
   {
     id: "3",
@@ -77,6 +82,7 @@ const initialAttendance: Attendance[] = [
     checkOutTime: "05:30 PM",
     date: new Date().toISOString().split("T")[0],
     status: "present",
+    approval: "accepted",
   },
 ]
 
@@ -122,6 +128,8 @@ export default function AttendancePage() {
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [qrCodeData, setQrCodeData] = useState<string | null>(null)
   const [showQRModal, setShowQRModal] = useState(false)
+  const [showPermissionModal, setShowPermissionModal] = useState(false)
+  const [imageModal, setImageModal] = useState<{ imageUrl: string; isOpen: boolean } | null>(null)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -148,6 +156,20 @@ export default function AttendancePage() {
   const [networkData, setNetworkData] = useState({
     name: "",
     ipAddress: "",
+  })
+
+  const [permissionData, setPermissionData] = useState({
+    profile: "👤",
+    name: "",
+    staffId: "",
+    role: "",
+    organization: "",
+    room: "",
+    shift: "",
+    date: new Date().toISOString().split('T')[0],
+    requestReason: "",
+    notes: "",
+    requestImage: null as File | null,
   })
 
   const determineStatus = (checkInTime: string): "present" | "late" => {
@@ -568,6 +590,10 @@ export default function AttendancePage() {
         }
         const created = await createAttendanceAPI(newRecordPayload)
         setAttendance((prev) => [created, ...prev])
+        // after successful create, ensure UI shows attendance tab
+        setActiveTab('attendance')
+        // optional: ensure selected date is today so the new record is visible
+        setSelectedDate(new Date().toISOString().split('T')[0])
       }
       setManualData({ profile: '👤', name: '', staffId: '', role: '', organization: '', room: '', shift: '' })
       setScannedOrgData(null)
@@ -606,38 +632,120 @@ export default function AttendancePage() {
   }
 
   const handleUpdateApproval = async (id: string, newStatus: "pending" | "accepted" | "rejected") => {
-  try {
-    // SAVE TO BACKEND
-    await updateAttendanceAPI(id, { approval: newStatus })
+    try {
+      // Try to save to backend - but don't fail if record doesn't exist (for demo data)
+      const res = await fetch(`${API_BASE}/api/attendance/${id}/approval`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approval: newStatus }),
+      })
 
-    // UPDATE UI STATE
-    setAttendance((prev) =>
-      prev.map((a) =>
-        a.id === id ? { ...a, approval: newStatus } : a
+      // If the API call fails (e.g., record doesn't exist in DB), still update UI
+      if (!res.ok) {
+        console.warn(`Record ${id} not found in database, updating local state only`)
+      }
+
+      // Always update UI state (whether API call succeeded or failed)
+      setAttendance((prev) =>
+        prev.map((a) =>
+          a.id === id ? { ...a, approval: newStatus } : a
+        )
       )
-    )
-  } catch (err) {
-    console.error("Approval update failed", err)
-    alert("Failed to update approval status")
+
+      console.log(`Approval status updated to ${newStatus} for record ${id}`)
+    } catch (err) {
+      console.error("Approval update failed", err)
+      // Still update UI state even if API fails
+      setAttendance((prev) =>
+        prev.map((a) =>
+          a.id === id ? { ...a, approval: newStatus } : a
+        )
+      )
+      console.log(`Updated local state only - API call failed for record ${id}`)
+    }
   }
-}
 
 const handleAskPermission = async (id: string) => {
   try {
     // Set approval to pending (requesting permission)
     await updateAttendanceAPI(id, { approval: "pending" })
-    
+
     // UPDATE UI STATE
     setAttendance((prev) =>
       prev.map((a) =>
         a.id === id ? { ...a, approval: "pending" } : a
       )
     )
-    
+
     alert("Permission request sent successfully!")
   } catch (err) {
     console.error("Ask permission failed", err)
     alert("Failed to send permission request")
+  }
+}
+
+const handleSubmitPermission = async () => {
+  try {
+    // Validate required fields
+    if (!permissionData.name || !permissionData.staffId || !permissionData.role ||
+        !permissionData.organization || !permissionData.shift || !permissionData.requestReason) {
+      alert("Please fill in all required fields")
+      return
+    }
+
+    // Prepare form data for submission
+    const formData = new FormData()
+    formData.append('name', permissionData.name)
+    formData.append('staffId', permissionData.staffId)
+    formData.append('role', permissionData.role)
+    formData.append('organization', permissionData.organization)
+    formData.append('room', permissionData.room)
+    formData.append('shift', permissionData.shift)
+    formData.append('date', permissionData.date)
+    formData.append('status', 'present') // Default status
+    formData.append('approval', 'ask_permission') // Set to ask_permission status
+    formData.append('requestReason', permissionData.requestReason)
+    formData.append('notes', permissionData.notes)
+
+    // Add image if provided
+    if (permissionData.requestImage) {
+      formData.append('requestImage', permissionData.requestImage)
+    }
+
+    // Submit to backend
+    const res = await fetch(`${API_BASE}/api/attendance`, {
+      method: 'POST',
+      body: formData, // Use FormData for file upload
+    })
+
+    if (!res.ok) throw new Error('Failed to submit permission request')
+
+    const result = await res.json()
+
+    // Add to UI state
+    setAttendance(prev => [...prev, result.data])
+
+    // Reset form and close modal
+    setPermissionData({
+      profile: "👤",
+      name: "",
+      staffId: "",
+      role: "",
+      organization: "",
+      room: "",
+      shift: "",
+      date: new Date().toISOString().split('T')[0],
+      requestReason: "",
+      notes: "",
+      requestImage: null,
+    })
+    setShowPermissionModal(false)
+
+    alert("Permission request submitted successfully!")
+
+  } catch (err) {
+    console.error("Submit permission failed", err)
+    alert("Failed to submit permission request")
   }
 }
 
@@ -855,14 +963,7 @@ const handleAskPermission = async (id: string) => {
                     Add Record
                   </button>
                   <button
-                    onClick={() => {
-                      const pendingRecords = todayAttendance.filter(a => !a.approval || a.approval === 'pending')
-                      if (pendingRecords.length === 0) {
-                        alert('No pending attendance records to request permission for.')
-                        return
-                      }
-                      pendingRecords.forEach(record => handleAskPermission(record.id))
-                    }}
+                    onClick={() => setShowPermissionModal(true)}
                     className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
                   >
                     <Send className="h-4 w-4" />
@@ -924,6 +1025,8 @@ const handleAskPermission = async (id: string) => {
                         <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SHIFT</th>
                         <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CHECK IN/OUT</th>
                         <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>APPROVAL</th>
+                        <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>NOTE</th>
+                        <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>IMAGE</th>
                         <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ACTIONS</th>
                       </tr>
                     </thead>
@@ -1007,7 +1110,7 @@ const handleAskPermission = async (id: string) => {
           onChange={(e) =>
             handleUpdateApproval(
               record.id,
-              e.target.value as "pending" | "accepted" | "rejected"
+              e.target.value as "pending" | "ask_permission" | "accepted" | "rejected"
             )
           }
           style={{
@@ -1021,20 +1124,47 @@ const handleAskPermission = async (id: string) => {
                 ? "#dcfce7"
                 : record.approval === "rejected"
                   ? "#fee2e2"
-                  : "#ffedd5",
+                  : record.approval === "ask_permission"
+                    ? "#dbeafe"
+                    : "#ffedd5",
             color:
               record.approval === "accepted"
                 ? "#166534"
                 : record.approval === "rejected"
                   ? "#7f1d1d"
-                  : "#9a3412",
+                  : record.approval === "ask_permission"
+                    ? "#1e40af"
+                    : "#9a3412",
             border: "1px solid #cbd5f5"
           }}
         >
           <option value="pending">Pending</option>
+          <option value="ask_permission">Ask Permission</option>
           <option value="accepted">Accepted</option>
           <option value="rejected">Rejected</option>
         </select>
+      </td>
+
+      {/* NOTE COLUMN */}
+      <td style={{ padding: '16px', fontSize: '14px', color: '#64748b' }}>
+        <div style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={record.requestReason || record.notes || ''}>
+          {record.requestReason || record.notes || '-'}
+        </div>
+      </td>
+
+      {/* IMAGE COLUMN */}
+      <td style={{ padding: '16px', textAlign: 'center' }}>
+        {record.requestImage ? (
+          <button
+            onClick={() => setImageModal({ imageUrl: `${API_BASE}/uploads/attendance/${record.requestImage}`, isOpen: true })}
+            className="text-blue-600 hover:text-blue-800 underline text-sm"
+            title="Click to view image"
+          >
+            View Image
+          </button>
+        ) : (
+          <span className="text-gray-400 text-sm">-</span>
+        )}
       </td>
 
       {/* ACTION BUTTONS */}
@@ -1062,25 +1192,6 @@ const handleAskPermission = async (id: string) => {
             title="Edit"
           >
             <Edit style={{ height: '16px', width: '16px' }} />
-          </button>
-
-          {/* Ask Permission Button */}
-          <button
-            onClick={() => handleAskPermission(record.id)}
-            style={{
-              padding: '8px',
-              color: record.approval === 'pending' ? '#f59e0b' : '#9ca3af',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s',
-              backgroundColor: record.approval === 'pending' ? '#fef3c7' : 'transparent'
-            }}
-            className="hover:text-orange-600 hover:bg-orange-50"
-            title="Ask Permission"
-          >
-            <Send style={{ height: '16px', width: '16px' }} />
           </button>
 
           {!record.checkOutTime && (
@@ -1329,11 +1440,32 @@ const handleAskPermission = async (id: string) => {
             {cameraActive && (
               <div className="mb-4">
                 <p className="text-xs text-gray-600 text-center mb-2">Point camera at QR code</p>
-                <video
-                  ref={videoRef}
-                  className="w-full rounded-lg bg-black"
-                  style={{ maxHeight: '300px' }}
-                />
+
+                <div className="camera-preview-wrapper">
+                  <video
+                    ref={videoRef}
+                    className="w-full rounded-lg bg-black"
+                    style={{ maxHeight: '300px' }}
+                  />
+
+                  {/* QR alignment frame */}
+                  <div className="qr-frame" aria-hidden="true">
+                    <span className="corner top-left" aria-hidden="true" />
+                    <span className="corner top-right" aria-hidden="true" />
+                    <span className="corner bottom-left" aria-hidden="true" />
+                    <span className="corner bottom-right" aria-hidden="true" />
+                  </div>
+
+                  {/* Animated scanning line */}
+                  <div className="scan-line" aria-hidden="true" />
+
+                  {/* Scanning overlay line */}
+                  {/* <div className="qr-search-line camera-overlay" role="status" aria-live="polite">
+                    <span className="qr-search-dot" aria-hidden="true" />
+                    <span className="label">Scanning for QR on camera</span>
+                    <span className="status">Searching…</span>
+                  </div> */}
+                </div>
               </div>
             )}
 
@@ -1496,10 +1628,12 @@ const handleAskPermission = async (id: string) => {
                 <select
                   value={manualData.organization}
                   onChange={(e) => setManualData({ ...manualData, organization: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${scannedOrgData?.isScanned ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  disabled={!!scannedOrgData?.isScanned}
+                  title={scannedOrgData?.isScanned ? 'Organization locked from QR scan' : 'Select organization'}
                 >
-                  <option value="">Select organization</option>
-                  {organizations.map((org) => (
+                  <option value="">{scannedOrgData?.isScanned ? scannedOrgData.orgName : 'Select organization'}</option>
+                  {!scannedOrgData?.isScanned && organizations.map((org) => (
                     <option key={org.id} value={org.name}>
                       {org.name}
                     </option>
@@ -1682,6 +1816,199 @@ const handleAskPermission = async (id: string) => {
         </div>
       )}
 
+      {/* Permission Request Modal */}
+      {showPermissionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Request Permission</h2>
+                <button
+                  onClick={() => setShowPermissionModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmitPermission();
+              }} className="space-y-6">
+                {/* Basic Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                    <input
+                      type="text"
+                      value={permissionData.name}
+                      onChange={(e) => setPermissionData(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Staff ID</label>
+                    <input
+                      type="text"
+                      value={permissionData.staffId}
+                      onChange={(e) => setPermissionData(prev => ({ ...prev, staffId: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                    <select
+                      value={permissionData.role}
+                      onChange={(e) => setPermissionData(prev => ({ ...prev, role: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">Select Role</option>
+                      {staffRoles.map(role => (
+                        <option key={role} value={role}>{role}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Organization</label>
+                    <input
+                      type="text"
+                      value={permissionData.organization}
+                      onChange={(e) => setPermissionData(prev => ({ ...prev, organization: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="CareLink Clinic"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Room</label>
+                    <input
+                      type="text"
+                      value={permissionData.room}
+                      onChange={(e) => setPermissionData(prev => ({ ...prev, room: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="101"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Shift</label>
+                    <select
+                      value={permissionData.shift}
+                      onChange={(e) => setPermissionData(prev => ({ ...prev, shift: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">Select Shift</option>
+                      <option value="Morning">Morning</option>
+                      <option value="Afternoon">Afternoon</option>
+                      <option value="Night">Night</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                    <input
+                      type="date"
+                      value={permissionData.date}
+                      onChange={(e) => setPermissionData(prev => ({ ...prev, date: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Permission Request Details */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Reason for Permission Request</label>
+                    <textarea
+                      value={permissionData.requestReason}
+                      onChange={(e) => setPermissionData(prev => ({ ...prev, requestReason: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none"
+                      placeholder="Please explain why you are requesting permission..."
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
+                    <textarea
+                      value={permissionData.notes}
+                      onChange={(e) => setPermissionData(prev => ({ ...prev, notes: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-20 resize-none"
+                      placeholder="Any additional notes..."
+                    />
+                  </div>
+
+                  {/* Image Upload */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Upload Proof Image (Optional)</label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setPermissionData(prev => ({ ...prev, requestImage: file }));
+                          }
+                        }}
+                        className="hidden"
+                        id="permission-image"
+                      />
+                      <label htmlFor="permission-image" className="cursor-pointer">
+                        <Upload className="mx-auto h-12 w-12 text-gray-400 mb-2" />
+                        <p className="text-sm text-gray-600">
+                          {permissionData.requestImage ? permissionData.requestImage.name : 'Click to upload proof image'}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 10MB</p>
+                      </label>
+                    </div>
+                    {permissionData.requestImage && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="text-sm text-green-600">✓ Image selected</span>
+                        <button
+                          type="button"
+                          onClick={() => setPermissionData(prev => ({ ...prev, requestImage: null }))}
+                          className="text-xs text-red-600 hover:text-red-800"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Submit Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                  >
+                    <Send className="h-5 w-5" />
+                    Submit Permission Request
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPermissionModal(false)}
+                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -1710,6 +2037,35 @@ const handleAskPermission = async (id: string) => {
               >
                 Delete
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image View Modal */}
+      {imageModal?.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-xl font-bold">Proof Image</h2>
+              <button
+                onClick={() => setImageModal(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-4 flex justify-center">
+              <img
+                src={imageModal.imageUrl}
+                alt="Proof"
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTkgMTJ2NmwxIDFMMTIgOWwtMy0zVjEySDl6IiBmaWxsPSIjOWNhM2FmIi8+CjxwYXRoIGQ9Ik0yMCAxMEg0YTIgMiAwIDAwLTIgMnY4YTIgMiAwIDAwMiAyaDE2YTIgMiAwIDAwMi0ydi04YTIgMiAwIDAwLTItMnoiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzlhYTNhZiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+';
+                  target.alt = 'Image not available';
+                }}
+              />
             </div>
           </div>
         </div>

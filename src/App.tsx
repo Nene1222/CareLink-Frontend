@@ -3,10 +3,11 @@ import MainLayout from './components/MainLayout';
 import Home from './pages/dashboard';
 import AttendancePage from './features/attendance/attendance';
 import POS from './pages/pos/POS';
-import { AppointmentsPage } from './features/appointment/appointment'; 
+import { AppointmentsPage } from './features/appointment/appointment';
 import InventoryPage from './pages/inventory/page';
 import MedicalRecord from './pages/medical/page';
 import CompleteMedicalRecord from './pages/medical/completeMedicalRecord';
+import Profile from './pages/profile';
 
 // Wrapper component to provide navigation prop to MedicalRecord
 const MedicalRecordWithNav: React.FC = () => {
@@ -29,10 +30,9 @@ function App() {
           <Route path="/dashboard" element={<Home />} />
           <Route path="/attendance" element={<AttendancePage />} />
           <Route path="/appointment" element={<AppointmentsPage />} />
-          <Route path="/profile" element={<Home />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/POS" element={<POS />} />
           <Route path="/inventory" element={<InventoryPage />} />
-          {/* Wrapper to provide navigation prop to MedicalRecord */}
           <Route
             path="/medical-record"
             element={<MedicalRecordWithNav />}

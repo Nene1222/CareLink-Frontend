@@ -1,5 +1,3 @@
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type{ Medicine, Service } from '../types';
 import { MedicineCard } from './MedicineCard';
 import { ServiceCard } from './ServiceCard';
@@ -11,6 +9,8 @@ interface ProductDisplayProps {
   onAddServiceToCart: (service: Service) => void;
   searchQuery: string;
   selectedType: string;
+  activeTab: 'medicines' | 'services';
+  onTabChange: (tab: 'medicines' | 'services') => void;
 }
 
 export const ProductDisplay = ({
@@ -20,8 +20,9 @@ export const ProductDisplay = ({
   onAddServiceToCart,
   searchQuery,
   selectedType,
+  activeTab,
+  onTabChange,
 }: ProductDisplayProps) => {
-  const [activeTab, setActiveTab] = useState<'medicines' | 'services'>('medicines');
 
   const filteredMedicines = medicines.filter((med) => {
     const matchesSearch =
@@ -37,54 +38,9 @@ export const ProductDisplay = ({
     return matchesSearch && matchesType;
   });
 
-  const handlePrevious = () => {
-    setActiveTab(activeTab === 'medicines' ? 'services' : 'medicines');
-  };
-
-  const handleNext = () => {
-    setActiveTab(activeTab === 'medicines' ? 'services' : 'medicines');
-  };
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4">
-      <div className="flex items-center justify-between mb-4">
-        <button
-          onClick={handlePrevious}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5 text-gray-600" />
-        </button>
-
-        <div className="flex gap-2">
-          <button
-            onClick={() => setActiveTab('medicines')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === 'medicines'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Medicine List
-          </button>
-          <button
-            onClick={() => setActiveTab('services')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === 'services'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Service List
-          </button>
-        </div>
-
-        <button
-          onClick={handleNext}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ChevronRight className="w-5 h-5 text-gray-600" />
-        </button>
-      </div>
 
       <div className="min-h-[600px]">
         {activeTab === 'medicines' && (

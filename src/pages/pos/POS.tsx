@@ -15,7 +15,14 @@ const POS = () => {
   const { medicines, services, loading, error } = usePOSData();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('all');
+  const [activeTab, setActiveTab] = useState<'medicines' | 'services'>('medicines');
   const [showCart, setShowCart] = useState(false);
+
+  // Reset filter when switching tabs
+  const handleTabChange = (tab: 'medicines' | 'services') => {
+    setActiveTab(tab);
+    setSelectedType('all'); // Reset filter when switching tabs
+  };
   const [showScanner, setShowScanner] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
@@ -272,6 +279,8 @@ const removeCartItem = async (id: string) => {
           onSearchChange={setSearchQuery}
           selectedType={selectedType}
           onTypeChange={setSelectedType}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
           medicines={medicines}
           services={services}
           onToggleCart={() => setShowCart(!showCart)}
@@ -288,6 +297,8 @@ const removeCartItem = async (id: string) => {
               onAddServiceToCart={addServiceToCart}
               searchQuery={searchQuery}
               selectedType={selectedType}
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
             />
           </div>
 
