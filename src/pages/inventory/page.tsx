@@ -169,9 +169,9 @@ const InventoryPage: React.FC = () => {
 
       {/* Action Buttons */}
       <div className="actions-bar">
-        <button className="action-btn-primary" onClick={handleScanBarcode}>
+        {/* <button className="action-btn-primary" onClick={handleScanBarcode}>
           Scan Bar Code
-        </button>
+        </button> */}
         <button className="action-btn-primary" onClick={handleAddGroup}>
           <span className="plus-icon">+</span>
           Add Group Medicine
